@@ -3,7 +3,7 @@ import { Layers, Lock, Mail, AlertCircle, ArrowRight, UserRound, Users, ShieldCh
 import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
-  const { login, register, logout } = useAuth();
+  const { login, register } = useAuth();
   const [portal, setPortal] = useState(null);
   const [mode, setMode] = useState('login');
   const [name, setName] = useState('');
@@ -30,16 +30,15 @@ export default function Login() {
         return;
       }
 
-      const user = await login(email, password);
       const allowedRoles = portal === 'admin' ? ['ADMIN', 'AGENT'] : ['CUSTOMER'];
-      if (!allowedRoles.includes(user.role)) {
-        await logout();
-        throw new Error(portal === 'admin'
-          ? 'This account is not an Arvo staff account. Please use customer sign in or contact your administrator.'
-          : 'This is an Arvo staff account. Please sign in through the admin option.');
-      }
+      await login(email, password, allowedRoles);
     } catch (err) {
-      setError(err.message || (isRegistering ? 'Could not create your account.' : 'Invalid email or password.'));
+      const message = err.code === 'ROLE_MISMATCH'
+        ? portal === 'admin'
+          ? 'This account is not an Arvo staff account. Please use customer sign in or contact your administrator.'
+          : 'This is an Arvo staff account. Please sign in through the Arvo option.'
+        : err.message || (isRegistering ? 'Could not create your account.' : 'Invalid email or password.');
+      setError(message);
     } finally {
       setSubmitting(false);
     }
