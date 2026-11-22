@@ -64,17 +64,12 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const switchUser = async (email, password = 'Password123!') => {
-    return await login(email, password);
-  };
-
   const value = {
     user,
     loading,
     login,
     register,
     logout,
-    switchUser,
     isAdmin: user?.role === 'ADMIN',
     isAgent: user?.role === 'AGENT',
     isStaff: user?.role === 'ADMIN' || user?.role === 'AGENT',

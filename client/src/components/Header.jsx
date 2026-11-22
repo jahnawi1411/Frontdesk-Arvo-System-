@@ -1,17 +1,7 @@
 import React from 'react';
-import { Search, UserCheck, Clock, Shield, Bell } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { Search, Clock } from 'lucide-react';
 
 export default function Header({ title, subtitle, onSearch, searchQuery }) {
-  const { user, switchUser } = useAuth();
-
-  const demoAccounts = [
-    { label: 'Admin (Marcus)', email: 'admin@arvo.com', role: 'ADMIN' },
-    { label: 'Agent Lead (Meera)', email: 'meera@arvo.com', role: 'AGENT' },
-    { label: 'Agent (Rohan)', email: 'rohan@arvo.com', role: 'AGENT' },
-    { label: 'Customer (Rahul)', email: 'rahul@apexlogistics.com', role: 'CUSTOMER' },
-  ];
-
   return (
     <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-10 shadow-sm">
       {/* Title & Context */}
@@ -42,27 +32,6 @@ export default function Header({ title, subtitle, onSearch, searchQuery }) {
           </div>
         )}
 
-        {/* Quick Demo Role Switcher */}
-        <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200">
-          <span className="text-[11px] font-semibold text-slate-500 uppercase px-2">Role:</span>
-          {demoAccounts.map((acc) => {
-            const isCurrent = user?.email === acc.email;
-            return (
-              <button
-                key={acc.email}
-                onClick={() => switchUser(acc.email)}
-                className={`text-xs px-2.5 py-1 rounded-md font-medium transition-all ${
-                  isCurrent
-                    ? 'bg-blue-600 text-white shadow-xs font-semibold'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-white'
-                }`}
-                title={`Switch to ${acc.label}`}
-              >
-                {acc.label.split(' ')[0]}
-              </button>
-            );
-          })}
-        </div>
       </div>
     </header>
   );
