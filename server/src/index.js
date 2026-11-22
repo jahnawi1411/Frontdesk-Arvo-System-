@@ -1,7 +1,10 @@
 import app from './app.js';
 import { initScheduler } from './services/scheduler.js';
+import { ensureConfiguredAdmin } from './services/initialAdmin.js';
 
 const PORT = process.env.PORT || 5000;
+
+await ensureConfiguredAdmin();
 
 const server = app.listen(PORT, () => {
   console.log(`====================================================`);
