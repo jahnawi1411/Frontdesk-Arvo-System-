@@ -1,0 +1,135 @@
+// Frontdesk Database Schema for PostgreSQL (Production)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String       @id @default(uuid())
+  email           String       @unique
+  passwordHash    String
+  name            String
+  role            String       // ADMIN, AGENT, CUSTOMER
+  department      String?
+  avatarUrl       String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  createdTickets  Ticket[]     @relation("CustomerTickets")
+  assignedTickets Ticket[]     @relation("AssignedTickets")
+  messages        Message[]
+  auditLogs       AuditLog[]
+
+  @@index([role])
+  @@index([email])
+}
+
+model Ticket {
+  id                    String      @id // e.g. "INC-0291"
+  ticketNumber          Int         @unique
+  subject               String
+  description           String
+  customerId            String
+  customer              User        @relation("CustomerTickets", fields: [customerId], references: [id])
+  assignedToId          String?
+  assignedTo            User?       @relation("AssignedTickets", fields: [assignedToId], references: [id])
+  priority              String      // URGENT, MEDIUM, SMALL
+  status                String      // OPEN, IN_PROGRESS, WAITING_FOR_CUSTOMER, RESOLVED, CLOSED
+  
+  // Independent SLA Deadlines and Timestamps
+  firstResponseDeadline DateTime
+  resolutionDeadline    DateTime
+  firstResponseAt       DateTime?
+  resolvedAt            DateTime?
+  closedAt              DateTime?
+  reopenedAt            DateTime?
+  
+  // Pause/Resume tracking (Preserves consumed working time)
+  pausedAt              DateTime?
+  totalPausedSeconds    Int         @default(0)
+  
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  messages              Message[]
+  slaEvents             SlaEvent[]
+  auditLogs             AuditLog[]
+
+  @@index([status])
+  @@index([priority])
+  @@index([customerId])
+  @@index([assignedToId])
+  @@index([firstResponseDeadline])
+  @@index([resolutionDeadline])
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  ticketId  String
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id])
+  type      String   // PUBLIC_REPLY, INTERNAL_NOTE
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([ticketId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+model SlaEvent {
+  id                     String   @id @default(uuid())
+  ticketId               String
+  ticket                 Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  eventType              String   // PAUSE, RESUME, PRIORITY_CHANGE
+  timestamp              DateTime @default(now())
+  consumedWorkingMinutes Float?
+  remainingWorkingMinutes Float?
+  reason                 String?
+
+  @@index([ticketId])
+  @@index([timestamp])
+}
+
+model Holiday {
+  id          String   @id @default(uuid())
+  name        String
+  date        String   @unique // Format: YYYY-MM-DD
+  description String?
+  createdAt   DateTime @default(now())
+
+  @@index([date])
+}
+
+model SystemSetting {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+}
+
+model AuditLog {
+  id            String   @id @default(uuid())
+  ticketId      String
+  ticket        Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userName      String
+  userRole      String
+  action        String   // TICKET_CREATED, TICKET_ASSIGNED, etc.
+  previousValue String?
+  newValue      String?
+  metadata      String?  // JSON string
+  createdAt     DateTime @default(now())
+
+  @@index([ticketId])
+  @@index([createdAt])
+  @@index([userId])
+}

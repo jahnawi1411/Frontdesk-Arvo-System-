@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: frontdesk-support
+    runtime: node
+    plan: free
+    buildCommand: npm run install:all && npm run prisma:generate --prefix server -- --schema=prisma/schema.postgresql.prisma && npm run build:client
+    startCommand: cd server && npx prisma db push --schema=prisma/schema.postgresql.prisma && cd .. && npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: frontdesk-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+
+databases:
+  - name: frontdesk-db
+    databaseName: frontdesk
+    user: frontdesk
+    plan: free

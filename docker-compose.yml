@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: frontdesk-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: frontdesk_user
+      POSTGRES_PASSWORD: frontdesk_secure_password_2026
+      POSTGRES_DB: frontdesk_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U frontdesk_user -d frontdesk_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: frontdesk-api
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT: 5000
+      NODE_ENV: production
+      DATABASE_URL: postgresql://frontdesk_user:frontdesk_secure_password_2026@postgres:5432/frontdesk_db?schema=public
+      JWT_SECRET: production-secret-frontdesk-arvo-systems-super-jwt-key
+      JWT_EXPIRES_IN: 7d
+      SLA_WORK_START: "09:30"
+      SLA_WORK_END: "18:30"
+      SLA_WORK_DAYS: "1,2,3,4,5"
+      SLA_URGENT_FIRST_RESPONSE_HOURS: 2
+      SLA_URGENT_RESOLUTION_HOURS: 9
+      SLA_MEDIUM_FIRST_RESPONSE_HOURS: 4.5
+      SLA_MEDIUM_RESOLUTION_HOURS: 27
+      SLA_SMALL_FIRST_RESPONSE_HOURS: 9
+      SLA_SMALL_RESOLUTION_HOURS: 45
+      SLA_AUTO_CLOSE_WORKING_DAYS: 5
+      SLA_REOPEN_WINDOW_WORKING_DAYS: 5
+      SLA_PRIORITY_CHANGE_POLICY: RECALCULATE_FROM_REMAINING_RATIO
+    ports:
+      - "5000:5000"
+
+volumes:
+  postgres_data:
