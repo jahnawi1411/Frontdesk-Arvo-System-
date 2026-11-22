@@ -30,8 +30,17 @@ export function AuthProvider({ children }) {
     loadUser();
   }, []);
 
-  const login = async (email, password) => {
+  const login = async (email, password, allowedRoles = null) => {
     const data = await api.login(email, password);
+
+    // Validate the selected sign-in path before publishing the user to app state.
+    // This prevents the wrong portal from rendering even briefly.
+    if (allowedRoles && !allowedRoles.includes(data.user.role)) {
+      const error = new Error('This account does not have access to this sign-in option.');
+      error.code = 'ROLE_MISMATCH';
+      throw error;
+    }
+
     setAuthToken(data.token);
     setUser(data.user);
     return data.user;
